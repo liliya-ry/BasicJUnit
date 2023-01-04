@@ -1,7 +1,13 @@
-import annotations.*;
-import static assertions.Assertions.*;
+import annotations.BeforeEach;
+import annotations.Disabled;
+import annotations.DisplayName;
+import annotations.Test;
 
-class CupTest {
+import java.util.Optional;
+
+import static assertions.Assertions.assertEquals;
+
+public class Test1 {
     private Cup cup;
 
     @BeforeEach
@@ -17,7 +23,7 @@ class CupTest {
 
     @Test
     void getPercentFull() {
-        assertEquals(85.5, cup.getPercentFull());
+        assertEquals(1, cup.getPercentFull());
     }
 
     @Test

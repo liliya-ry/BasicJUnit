@@ -4,16 +4,93 @@ import errors.AssertionFailedError;
 import java.util.Objects;
 
 public class Assertions {
-    private static final String DEFAULT_MESSAGE_TEMPLATE = "expected <%s> but was: <%s>";
-    private static final String DEFAULT_NOT_NULL_MESSAGE = "expected not <null>";
     public static void assertEquals(Object expected, Object actual) {
         assertEquals(expected, actual, null);
     }
 
     public static void assertEquals(Object expected, Object actual, String message) {
         if (!Objects.equals(expected, actual)) {
-            String finalMsg = buildMessage(expected, actual, message);
-            throw new AssertionFailedError(finalMsg);
+            throw new AssertionFailedError(expected, actual, message);
+        }
+    }
+
+    public static void assertEquals(int expected, int actual) {
+        assertEquals(expected, actual, null);
+    }
+
+    public static void assertEquals(int expected, int actual, String message) {
+        if (expected != actual) {
+            throw new AssertionFailedError(expected, actual, message);
+        }
+    }
+
+    public static void assertEquals(float expected, float actual) {
+        assertEquals(expected, actual, null);
+    }
+
+    public static void assertEquals(float expected, float actual, String message) {
+        if (expected != actual) {
+            throw new AssertionFailedError(expected, actual, message);
+        }
+    }
+
+    public static void assertEquals(double expected, double actual) {
+        assertEquals(expected, actual, null);
+    }
+
+    public static void assertEquals(double expected, double actual, String message) {
+        if (expected != actual) {
+            throw new AssertionFailedError(expected, actual, message);
+        }
+    }
+
+    public static void assertEquals(long expected, long actual) {
+        assertEquals(expected, actual, null);
+    }
+
+    public static void assertEquals(long expected, long actual, String message) {
+        if (expected != actual) {
+            throw new AssertionFailedError(expected, actual, message);
+        }
+    }
+
+    public static void assertEquals(byte expected, byte actual) {
+        assertEquals(expected, actual, null);
+    }
+
+    public static void assertEquals(byte expected, byte actual, String message) {
+        if (expected != actual) {
+            throw new AssertionFailedError(expected, actual, message);
+        }
+    }
+
+    public static void assertEquals(boolean expected, boolean actual) {
+        assertEquals(expected, actual, null);
+    }
+
+    public static void assertEquals(boolean expected, boolean actual, String message) {
+        if (expected != actual) {
+            throw new AssertionFailedError(expected, actual, message);
+        }
+    }
+
+    public static void assertEquals(char expected, char actual) {
+        assertEquals(expected, actual, null);
+    }
+
+    public static void assertEquals(char expected, char actual, String message) {
+        if (expected != actual) {
+            throw new AssertionFailedError(expected, actual, message);
+        }
+    }
+
+    public static void assertEquals(short expected, short actual) {
+        assertEquals(expected, actual, null);
+    }
+
+    public static void assertEquals(short expected, short actual, String message) {
+        if (expected != actual) {
+            throw new AssertionFailedError(expected, actual, message);
         }
     }
 
@@ -23,8 +100,7 @@ public class Assertions {
 
     public static void assertTrue(boolean condition, String message) {
         if (!condition) {
-            String finalMsg = buildMessage(true, false, message);
-            throw new AssertionFailedError(finalMsg);
+            throw new AssertionFailedError(true, false, message);
         }
     }
 
@@ -34,8 +110,7 @@ public class Assertions {
 
     public static void assertFalse(boolean condition, String message) {
         if (condition) {
-            String finalMsg = buildMessage(false, true, message);
-            throw new AssertionFailedError(finalMsg);
+            throw new AssertionFailedError(false, true, message);
         }
     }
 
@@ -45,8 +120,7 @@ public class Assertions {
 
     public static void assertNull(Object object, String message) {
         if (object != null) {
-            String finalMsg = buildMessage(null, object, message);
-            throw new AssertionFailedError(finalMsg);
+            throw new AssertionFailedError(null, object, message);
         }
     }
 
@@ -56,13 +130,7 @@ public class Assertions {
 
     public static void assertNotNull(Object object, String message) {
         if (object == null) {
-            String finalMsg = message == null ? DEFAULT_NOT_NULL_MESSAGE : message + " ==> " + DEFAULT_NOT_NULL_MESSAGE;
-            throw new AssertionFailedError(finalMsg);
+            throw new AssertionFailedError(message);
         }
-    }
-
-    private static String buildMessage(Object expected, Object actual, String message) {
-        String defaultMsg = String.format(DEFAULT_MESSAGE_TEMPLATE, expected, actual);
-        return message == null ? defaultMsg : message + " ==> " + defaultMsg;
     }
 }
