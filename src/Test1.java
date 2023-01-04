@@ -14,6 +14,7 @@ public class Test1 {
     void setCup() {
         cup = new Cup("Orange Juice", 85.5);
     }
+
     @Test
     @DisplayName("Liquid test")
     @Disabled("Why")

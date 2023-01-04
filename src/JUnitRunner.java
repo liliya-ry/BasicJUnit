@@ -27,7 +27,7 @@ public class JUnitRunner {
         startTime = System.currentTimeMillis();
         for (TestClassRunner runner : testClassRunners) {
             runner.runTestClass();
-            testsCount += runner.tests.size();
+            testsCount += runner.foundTests;
             failuresCount += runner.failures.size();
             skippedTests += runner.skippedTests;
         }

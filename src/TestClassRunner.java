@@ -4,6 +4,7 @@ import java.util.*;
 
 public class TestClassRunner {
     int skippedTests = 0;
+    int foundTests = 0;
     final List<TestMethod> tests = new ArrayList<>();
     final List<Failure> failures = new ArrayList<>();
     private final Class<?> clazz;
@@ -46,22 +47,32 @@ public class TestClassRunner {
 
         for (TestMethod testMethod : tests) {
             runMethodsFromList(beforeEachMethods, instance);
-            try {
-                if (testMethod.checkDisabled()) {
-                    skippedTests++;
-                    continue;
-                }
-                testMethod.method.invoke(instance);
-            } catch (InvocationTargetException e) {
-                Throwable cause = e.getCause();
-                testMethod.setFailure(cause.getMessage());
-                Failure failure = new Failure(testMethod, clazz.getSimpleName(), cause);
-                failures.add(failure);
+
+            if (testMethod.checkDisabled()) {
+                skippedTests++;
+                continue;
             }
+
+            foundTests += testMethod.repeats;
+            for (int i = 0; i < testMethod.repeats; i++) {
+                invokeMethod(testMethod, instance, i + 1);
+            }
+
             runMethodsFromList(afterEachMethods, instance);
         }
 
         runMethodsFromList(afterClassMethods, instance);
+    }
+
+    private void invokeMethod(TestMethod testMethod, Object instance, int repetition) throws IllegalAccessException {
+        try {
+            testMethod.method.invoke(instance);
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            testMethod.setFailure(cause.getMessage());
+            Failure failure = new Failure(testMethod, clazz.getSimpleName(), cause, repetition);
+            failures.add(failure);
+        }
     }
 
     private void runMethodsFromList(List<Method> methods, Object instance) throws InvocationTargetException, IllegalAccessException {
@@ -73,7 +84,7 @@ public class TestClassRunner {
     public void printTestsInfo() {
         char successChar = failures.isEmpty() ? '+' : '\'';
         String status = failures.size() < tests.size() ? TestMethod.STATUS_OK : TestMethod.STATUS_FAILED;
-        System.out.printf("|   %c-- %s [%s]%n", successChar, clazz.getSimpleName(), status);
+        System.out.printf("| %c-- %s [%s]%n", successChar, clazz.getSimpleName(), status);
         for (TestMethod testMethod : tests) {
             testMethod.printTestMethod();
         }
