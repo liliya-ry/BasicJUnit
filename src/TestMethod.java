@@ -1,6 +1,7 @@
 import annotations.Disabled;
 import annotations.DisplayName;
 import annotations.RepeatedTest;
+import annotations.Test;
 
 import java.lang.reflect.Method;
 
@@ -14,11 +15,13 @@ public class TestMethod {
     String status = STATUS_OK;
     String failureMessage = "";
     int repeats;
+    String[] dependsMethods;
 
     TestMethod(Method method) {
         this.method = method;
         setDisplayName();
         setRepeats();
+        setDependsMethods();
     }
 
     private void setDisplayName() {
@@ -29,6 +32,11 @@ public class TestMethod {
     private void setRepeats() {
         RepeatedTest repeatedTestAnn = method.getAnnotation(RepeatedTest.class);
         repeats = repeatedTestAnn != null ? repeatedTestAnn.value() : 1;
+    }
+
+    private void setDependsMethods() {
+        Test testAnn = method.getAnnotation(Test.class);
+        dependsMethods = testAnn.dependsOnMethods();
     }
 
     void printTestMethod() {

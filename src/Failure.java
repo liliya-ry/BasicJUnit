@@ -13,9 +13,20 @@ public class Failure {
         this.repetition = repetition;
     }
 
-
+    public Failure(String className, Throwable cause) {
+        this.className = className;
+        this.cause = cause;
+    }
 
     void printFailure() {
+        if (testMethod != null) {
+            printMethodFailure();
+        } else {
+            printClassFailure();
+        }
+    }
+
+    private void printMethodFailure() {
         String junitLine = String.format("  JUnit Jupiter:%s:%s", className, testMethod.displayName);
         if (testMethod.repeats > 1) {
             junitLine += String.format(":repetition %d of %d", repetition, testMethod.repeats);
@@ -26,6 +37,17 @@ public class Failure {
         String paramTypesStr = paramTypes.length != 0 ? Arrays.toString(paramTypes) : "";
         String methodSourceLine = String.format("    MethodSource [className = '%s', methodName = '%s', methodParameterTypes = '%s']",
                                                 className, testMethod.method.getName(), paramTypesStr);
+        System.out.println(methodSourceLine);
+
+        System.out.print("    => ");
+        cause.printStackTrace();
+    }
+
+    private void printClassFailure() {
+        String junitLine = String.format("  JUnit Jupiter:%s", className);
+        System.out.println(junitLine);
+
+        String methodSourceLine = String.format("    ClassSource [className = '%s', filePosition = null]", className);
         System.out.println(methodSourceLine);
 
         System.out.print("    => ");

@@ -1,16 +1,15 @@
 package assertions;
 
-import errors.AssertionFailedError;
-import function.Executable;
-import function.ThrowingSupplier;
-
-import java.lang.reflect.InvocationTargetException;
+import exceptions.AssertionFailedError;
+import exceptions.MultipleFailuresError;
+import function.*;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public class Assertions {
     public static void assertEquals(Object expected, Object actual) {
@@ -275,10 +274,39 @@ public class Assertions {
             throw new AssertionFailedError(message, timeout.toMillis());
         } catch (Throwable throwable) {
             throw new RuntimeException(throwable);
+        } finally {
+            executorService.shutdown();
         }
     }
 
     public static <T> T assertTimeoutPreemptively(Duration timeout, ThrowingSupplier<T> supplier, Supplier<String> messageSupplier) {
         return assertTimeoutPreemptively(timeout, supplier, messageSupplier.get());
+    }
+
+    public static void assertAll(Executable... executables) throws MultipleFailuresError {
+        assertAll(null, executables);
+    }
+
+    public static void assertAll(Stream<Executable> executables) throws MultipleFailuresError {
+        assertAll(null, executables);
+    }
+
+    public static void assertAll(String heading, Executable... executables) throws MultipleFailuresError {
+        assertAll(heading, Stream.of(executables));
+    }
+
+    public static void assertAll(String heading, Stream<Executable> executables) throws MultipleFailuresError {
+        List<Throwable> throwableList = new ArrayList<>();
+        executables.forEach(e -> {
+            try {
+                e.execute();
+            } catch (Throwable throwable) {
+                throwableList.add(throwable);
+            }
+        });
+
+        if (!throwableList.isEmpty()) {
+            throw new MultipleFailuresError(heading, throwableList);
+        }
     }
 }

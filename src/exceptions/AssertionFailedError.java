@@ -1,4 +1,4 @@
-package errors;
+package exceptions;
 
 public class AssertionFailedError extends Error {
     private static final String DEFAULT_MESSAGE_TEMPLATE = "expected <%s> but was: <%s>";
