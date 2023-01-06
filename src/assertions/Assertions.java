@@ -3,6 +3,8 @@ package assertions;
 import exceptions.AssertionFailedError;
 import exceptions.MultipleFailuresError;
 import function.*;
+
+import java.lang.reflect.InvocationTargetException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -189,13 +191,16 @@ public class Assertions {
     public static <T extends Throwable> T assertThrows(Class<T> expectedType, Executable executable, String message)  {
         try {
             executable.execute();
-            throw new AssertionFailedError(expectedType, message);
         } catch (Throwable throwable) {
+            if (expectedType.equals(throwable.getCause().getClass())) {
+                return (T) throwable.getCause();
+            }
             if (!(expectedType.isInstance(throwable)) && !(throwable instanceof AssertionFailedError)) {
                 throw new AssertionFailedError(expectedType, throwable.getClass(), message);
             }
             return (T) throwable;
         }
+        throw new AssertionFailedError(expectedType, message);
     }
 
     public static <T extends Throwable> T assertThrows(Class<T> expectedType, Executable executable, Supplier<String> messageSupplier) {

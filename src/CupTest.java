@@ -17,8 +17,8 @@ class CupTest {
         System.out.println("test2");
     }
 
-    @Test(dependsOnMethods = {"test1", "test2"})
+    @Test(expected = NullPointerException.class)
     void test3() {
-        System.out.println("test3");
+        throw new NullPointerException();
     }
 }

@@ -16,12 +16,14 @@ public class TestMethod {
     String failureMessage = "";
     int repeats;
     String[] dependsMethods;
+    Class<? extends Throwable> expectedExceptionClass;
+    long timeout;
 
     TestMethod(Method method) {
         this.method = method;
         setDisplayName();
         setRepeats();
-        setDependsMethods();
+        setTestAnnotationAttributes();
     }
 
     private void setDisplayName() {
@@ -34,9 +36,11 @@ public class TestMethod {
         repeats = repeatedTestAnn != null ? repeatedTestAnn.value() : 1;
     }
 
-    private void setDependsMethods() {
+    private void setTestAnnotationAttributes() {
         Test testAnn = method.getAnnotation(Test.class);
         dependsMethods = testAnn.dependsOnMethods();
+        expectedExceptionClass = testAnn.expected();
+        timeout = testAnn.timeout();
     }
 
     void printTestMethod() {

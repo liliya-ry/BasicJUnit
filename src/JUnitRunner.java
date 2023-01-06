@@ -10,7 +10,7 @@ public class JUnitRunner {
     private long startTime;
     private long endTime;
 
-    public JUnitRunner(String[] classNames) throws Exception {
+    public JUnitRunner(String[] classNames) {
         testClassRunners = new ArrayList<>();
         for (String className : classNames) {
             Class<?> clazz = null;

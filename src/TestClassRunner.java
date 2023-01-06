@@ -1,8 +1,11 @@
+import static assertions.Assertions.*;
+
 import annotations.Test;
 import exceptions.JUnitException;
 import exceptions.PreconditionViolationException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
+import java.time.Duration;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -14,7 +17,6 @@ public class TestClassRunner {
     private final List<Method> beforeClassMethods = new ArrayList<>();
     private final List<Method> afterClassMethods = new ArrayList<>();
     private final Class<?> clazz;
-
     final Map<String, TestMethod> tests = new HashMap<>();
     final List<Failure> failures = new ArrayList<>();
     boolean failed = false;
@@ -102,19 +104,40 @@ public class TestClassRunner {
         for (String methodName : testMethod.dependsMethods) {
             TestMethod dependsMethod = tests.get(methodName);
             if (dependsMethod == null) {
-
+                //todo throw exception
             }
             invokeTestMethod(testMethod, instance);
         }
     }
 
     private void invokeTestMethod(TestMethod testMethod, Object instance) {
+        if (testMethod.repeats < 1) {
+            var exception = new PreconditionViolationException(clazz, testMethod.method);
+            testMethod.setFailure(exception.getMessage());
+            Failure failure = new Failure(clazz.getSimpleName(), exception);
+            failures.add(failure);
+        }
+
+        if (testMethod.timeout > 0) {
+            for (int i = 0; i < testMethod.repeats; i++) {
+                assertTimeoutPreemptively(Duration.ofMillis(testMethod.timeout), () -> testMethod.method.invoke(instance));
+            }
+            return;
+        }
+
+        if (!testMethod.expectedExceptionClass.equals(Test.None.class)) {
+            for (int i = 0; i < testMethod.repeats; i++) {
+                assertThrows(testMethod.expectedExceptionClass, () -> testMethod.method.invoke(instance));
+            }
+            return;
+        }
+
+        invokeTest(testMethod, instance);
+    }
+
+    private void invokeTest(TestMethod testMethod, Object instance) {
         int i = 0;
         try {
-            if (testMethod.repeats < 1) {
-                throw new PreconditionViolationException(clazz, testMethod.method);
-            }
-
             for (; i < testMethod.repeats; i++) {
                 testMethod.method.invoke(instance);
             }
@@ -123,10 +146,6 @@ public class TestClassRunner {
             Throwable cause = e.getCause();
             testMethod.setFailure(cause.getMessage());
             Failure failure = new Failure(testMethod, clazz.getSimpleName(), cause, i);
-            failures.add(failure);
-        } catch (PreconditionViolationException e) {
-            testMethod.setFailure(e.getMessage());
-            Failure failure = new Failure(clazz.getSimpleName(), e);
             failures.add(failure);
         }
     }
