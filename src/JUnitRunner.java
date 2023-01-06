@@ -1,8 +1,10 @@
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.commons.cli.*;
+
+import java.io.*;
+import java.util.*;
 
 public class JUnitRunner {
-    private final List<TestClassRunner> testClassRunners;
+    private final List<TestClassRunner> testClassRunners = new ArrayList<>();
     private int failuresCount = 0;
     private int testsCount = 0;
     private int skippedTests = 0;
@@ -11,7 +13,6 @@ public class JUnitRunner {
     private long endTime;
 
     public JUnitRunner(String[] classNames) {
-        testClassRunners = new ArrayList<>();
         for (String className : classNames) {
             Class<?> clazz = null;
             try {
@@ -23,6 +24,48 @@ public class JUnitRunner {
             TestClassRunner testClassRunner = new TestClassRunner(clazz);
             testClassRunners.add(testClassRunner);
         }
+    }
+
+    public JUnitRunner(String packageName) throws IOException {
+        List<Class<?>> testClasses = findAllClasses(packageName);
+        for (Class<?> testClass : testClasses) {
+            TestClassRunner testClassRunner = new TestClassRunner(testClass);
+            testClassRunners.add(testClassRunner);
+        }
+    }
+
+    private List<Class<?>> findAllClasses(String packageName) throws IOException {
+        List<Class<?>> classesList = new ArrayList<>();
+        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+        if (!packageName.equals(".")) {
+            packageName = packageName.replaceAll("[.]", "/");
+        }
+
+        try (var inputStream = classLoader.getResourceAsStream(packageName);
+             var isr = new InputStreamReader(inputStream);
+             var reader = new BufferedReader(isr)) {
+
+            for (String line; (line = reader.readLine()) != null;) {
+                if (!line.endsWith(".class") && !line.endsWith(".java")) {
+                    continue;
+                }
+
+                Class<?> clazz = getClass(line, packageName);
+                classesList.add(clazz);
+            }
+        }
+
+        return classesList;
+    }
+
+    private Class<?> getClass(String className, String packageName) {
+        try {
+            return Class.forName(packageName + "."
+                    + className.substring(0, className.lastIndexOf('.')));
+        } catch (ClassNotFoundException e) {
+            System.out.println("Class not found " + className);
+        }
+        return null;
     }
 
     public void startTests() throws Exception {
@@ -83,8 +126,41 @@ public class JUnitRunner {
         System.out.println();
     }
 
+    public static Options createOptions() {
+        Options options = new Options();
+        Option option = Option.builder("p").hasArg().build();
+        options.addOption(option);
+        return options;
+    }
+
+    private static CommandLine getCmd(Options options, String[] args) {
+        CommandLineParser parser = new DefaultParser();
+        try {
+            return parser.parse(options, args);
+        } catch (ParseException e) {
+            System.out.println("JUnit: unknown option --");
+            return null;
+        }
+    }
+
+    private static void printUsage() {
+        System.out.println("Invalid command");
+    }
+
     public static void main(String[] args) throws Exception {
-        JUnitRunner runner = new JUnitRunner(args);
+        if (args == null) {
+            printUsage();
+            return;
+        }
+
+        Options options = createOptions();
+        CommandLine cmd = getCmd(options, args);
+        if (cmd == null) {
+            return;
+        }
+
+        String packageName = cmd.getOptionValue("p");
+        JUnitRunner runner = (packageName == null) ? new JUnitRunner(args) : new JUnitRunner(packageName);
         runner.startTests();
         runner.printInfo();
     }

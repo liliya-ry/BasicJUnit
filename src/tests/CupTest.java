@@ -1,12 +1,9 @@
+package tests;
+
 import annotations.*;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.time.Duration;
 
-import static assertions.Assertions.*;
-
-class CupTest {
+public class CupTest {
+    public CupTest() {}
     @Test
     void test1() {
         System.out.println("test1");
