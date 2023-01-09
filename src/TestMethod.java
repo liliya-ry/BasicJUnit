@@ -4,6 +4,9 @@ import annotations.RepeatedTest;
 import annotations.Test;
 
 import java.lang.reflect.Method;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class TestMethod {
     static final String STATUS_OK = "OK";
@@ -15,7 +18,7 @@ public class TestMethod {
     String status = STATUS_OK;
     String failureMessage = "";
     int repeats;
-    String[] dependsMethods;
+    Set<String> dependsMethods = new HashSet<>();
     Class<? extends Throwable> expectedExceptionClass;
     long timeout;
 
@@ -38,7 +41,7 @@ public class TestMethod {
 
     private void setTestAnnotationAttributes() {
         Test testAnn = method.getAnnotation(Test.class);
-        dependsMethods = testAnn.dependsOnMethods();
+        dependsMethods.addAll(List.of(testAnn.dependsOnMethods()));
         expectedExceptionClass = testAnn.expected();
         timeout = testAnn.timeout();
     }

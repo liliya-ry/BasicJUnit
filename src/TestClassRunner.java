@@ -1,8 +1,8 @@
 import static assertions.Assertions.*;
 
 import annotations.Test;
-import exceptions.JUnitException;
-import exceptions.PreconditionViolationException;
+import exceptions.*;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.time.Duration;
@@ -16,6 +16,7 @@ public class TestClassRunner {
     private final List<Method> afterEachMethods = new ArrayList<>();
     private final List<Method> beforeClassMethods = new ArrayList<>();
     private final List<Method> afterClassMethods = new ArrayList<>();
+    private final Set<String> invokedMethodsNames = new HashSet<>();
     private final Class<?> clazz;
     final Map<String, TestMethod> tests = new HashMap<>();
     final List<Failure> failures = new ArrayList<>();
@@ -79,13 +80,12 @@ public class TestClassRunner {
             TestMethod testMethod = testEntry.getValue();
             if (testMethod.checkDisabled()) {
                 skippedTests++;
+                foundTests++;
                 continue;
             }
 
             foundTests += testMethod.repeats;
-            invokeDependsMethods(testMethod, instance);
             invokeTestMethod(testMethod, instance);
-
             runMethodsFromList(afterEachMethods, instance);
         }
 
@@ -100,39 +100,67 @@ public class TestClassRunner {
         methods.add(method);
     }
 
-    private void invokeDependsMethods(TestMethod testMethod, Object instance) {
-        for (String methodName : testMethod.dependsMethods) {
-            TestMethod dependsMethod = tests.get(methodName);
-            if (dependsMethod == null) {
-                //todo throw exception
+    private boolean invokeDependsMethods(TestMethod testMethod, Object instance) {
+        boolean isSuccessful = true;
+        for (String dependsMethodName : testMethod.dependsMethods) {
+            TestMethod dependsMethod = tests.get(dependsMethodName);
+            if (dependsMethod == null)
+                continue; //throw exception - invalid method name
+
+            String testMethodName = testMethod.method.getName();
+            if (dependsMethod.dependsMethods.contains(testMethodName)) { //circular dependency
+                var exception = new PreconditionViolationException(clazz, testMethodName, dependsMethodName);
+                setFailure(dependsMethod, exception);
+                isSuccessful = false;
+                continue;
             }
-            invokeTestMethod(testMethod, instance);
+
+            if (dependsMethod.status.equals("X")) {
+                isSuccessful = false;
+                setFailure(testMethod, new Exception("depends method failed"));
+                continue;
+            }
+
+            invokeTestMethod(dependsMethod, instance);
         }
+        return isSuccessful;
     }
 
     private void invokeTestMethod(TestMethod testMethod, Object instance) {
         if (testMethod.repeats < 1) {
             var exception = new PreconditionViolationException(clazz, testMethod.method);
-            testMethod.setFailure(exception.getMessage());
-            Failure failure = new Failure(clazz.getSimpleName(), exception);
-            failures.add(failure);
+            setFailure(testMethod, exception);
+        }
+
+        String testMethodName = testMethod.method.getName();
+        if (invokedMethodsNames.contains(testMethodName))
+            return;
+
+        invokedMethodsNames.add(testMethodName);
+
+        if (!invokeDependsMethods(testMethod, instance)) {
+            return;
         }
 
         if (testMethod.timeout > 0) {
-            for (int i = 0; i < testMethod.repeats; i++) {
+            for (int i = 0; i < testMethod.repeats; i++)
                 assertTimeoutPreemptively(Duration.ofMillis(testMethod.timeout), () -> testMethod.method.invoke(instance));
-            }
             return;
         }
 
         if (!testMethod.expectedExceptionClass.equals(Test.None.class)) {
-            for (int i = 0; i < testMethod.repeats; i++) {
+            for (int i = 0; i < testMethod.repeats; i++)
                 assertThrows(testMethod.expectedExceptionClass, () -> testMethod.method.invoke(instance));
-            }
             return;
         }
 
         invokeTest(testMethod, instance);
+    }
+
+    private void setFailure(TestMethod testMethod, Exception exception) {
+        testMethod.setFailure(exception.getMessage());
+        Failure failure = new Failure(clazz.getSimpleName(), exception);
+        failures.add(failure);
     }
 
     private void invokeTest(TestMethod testMethod, Object instance) {

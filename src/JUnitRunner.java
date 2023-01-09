@@ -12,6 +12,7 @@ public class JUnitRunner {
     private long startTime;
     private long endTime;
 
+    //Todo - one constructor with package name and array of classes name
     public JUnitRunner(String[] classNames) {
         for (String className : classNames) {
             Class<?> clazz = null;

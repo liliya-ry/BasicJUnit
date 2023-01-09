@@ -1,13 +1,9 @@
 package assertions;
 
-import exceptions.AssertionFailedError;
-import exceptions.MultipleFailuresError;
+import exceptions.*;
 import function.*;
-
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -262,6 +258,7 @@ public class Assertions {
         return assertTimeoutPreemptively(timeout, supplier, "");
     }
 
+    //Todo replace executor service with thread
     public static <T> T assertTimeoutPreemptively(Duration timeout, ThrowingSupplier<T> supplier, String message) {
         ExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
         try {
